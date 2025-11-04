@@ -1,0 +1,37 @@
+# Source files (only ship built code)
+src/
+tsconfig.json
+
+# Tests
+**/__tests__/
+**/*.test.ts
+**/*.test.js
+jest.config.js
+coverage/
+
+# Development
+.vscode/
+.github/
+node_modules/
+*.log
+*.tgz
+
+# Build artifacts
+benchmarks/
+docs/
+
+# Git
+.git/
+.gitignore
+
+# Editor
+.DS_Store
+*.swp
+*.swo
+*~
+
+# TypeScript
+*.tsbuildinfo
+
+# CI/CD
+.github/workflows/

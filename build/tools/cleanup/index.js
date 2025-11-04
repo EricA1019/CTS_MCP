@@ -1,0 +1,171 @@
+/**
+ * CTS Cleanup Tool
+ *
+ * Safe filesystem cleanup with git validation, dry-run mode, and rollback support.
+ * Integrates safety checks, cleanup strategies, and atomic file operations.
+ */
+import { z } from 'zod';
+import { validateSafety, formatSafetyReport } from './safety.js';
+import { STRATEGIES } from './strategies.js';
+import { join } from 'path';
+// Zod schema for parameter validation
+const CleanupParamsSchema = z.object({
+    projectPath: z.string().min(1, 'Project path required'),
+    strategies: z
+        .array(z.enum(['dead_code', 'duplicates']))
+        .default(['dead_code']),
+    dryRun: z.boolean().default(true),
+    requireCleanGit: z.boolean().default(true),
+    exclusions: z.array(z.string()).default(['**/.godot/**', '*.import']),
+    maxActions: z.number().min(1).max(1000).default(100),
+});
+// Tool definition for MCP protocol
+export const cleanupTool = {
+    name: 'CTS_Cleanup',
+    description: 'Safe filesystem cleanup with dead code detection, duplicate file removal, git validation, dry-run mode, and rollback support',
+    inputSchema: {
+        type: 'object',
+        properties: {
+            projectPath: {
+                type: 'string',
+                description: 'Absolute path to the Godot project directory',
+            },
+            strategies: {
+                type: 'array',
+                items: {
+                    type: 'string',
+                    enum: ['dead_code', 'duplicates'],
+                },
+                description: 'Cleanup strategies to apply (dead_code: unused imports, duplicates: identical files)',
+                default: ['dead_code'],
+            },
+            dryRun: {
+                type: 'boolean',
+                description: 'Preview mode - analyze without making changes (default: true for safety)',
+                default: true,
+            },
+            requireCleanGit: {
+                type: 'boolean',
+                description: 'Require clean git working tree before cleanup',
+                default: true,
+            },
+            exclusions: {
+                type: 'array',
+                items: { type: 'string' },
+                description: 'Glob patterns for files/directories to exclude',
+                default: ['**/.godot/**', '*.import'],
+            },
+            maxActions: {
+                type: 'number',
+                description: 'Maximum number of cleanup actions to return',
+                default: 100,
+            },
+        },
+        required: ['projectPath'],
+    },
+};
+/**
+ * Create MCP handler for cleanup tool
+ */
+export function createCleanupHandler() {
+    return async (args) => {
+        const startTime = Date.now();
+        try {
+            // Validate parameters
+            const params = CleanupParamsSchema.parse(args);
+            // Safety pre-flight checks
+            const safetyConfig = {
+                requireCleanGit: params.requireCleanGit,
+                dryRun: params.dryRun,
+                exclusions: params.exclusions,
+                trashDir: join(params.projectPath, '.cleanup_trash'),
+            };
+            const safetyReport = await validateSafety(params.projectPath, safetyConfig);
+            // Block cleanup if safety checks fail (unless dry-run)
+            if (!safetyReport.allPassed && !params.dryRun) {
+                const errorData = {
+                    code: -32603,
+                    message: 'Safety checks failed - cleanup blocked',
+                    safetyReport: formatSafetyReport(safetyReport),
+                    hint: 'Run with dryRun=true to preview, or fix safety issues',
+                };
+                return {
+                    content: [
+                        {
+                            type: 'text',
+                            text: JSON.stringify({ error: errorData }, null, 2),
+                        },
+                    ],
+                };
+            }
+            // Run cleanup strategies
+            const allActions = [];
+            for (const strategyName of params.strategies) {
+                const strategy = STRATEGIES[strategyName];
+                if (!strategy) {
+                    continue; // Skip unknown strategies
+                }
+                const actions = await strategy.analyze(params.projectPath, params.exclusions);
+                allActions.push(...actions);
+            }
+            // Limit actions to maxActions
+            const limitedActions = allActions.slice(0, params.maxActions);
+            // Calculate summary statistics
+            const summary = {
+                totalActions: allActions.length,
+                returnedActions: limitedActions.length,
+                byType: calculateActionCounts(limitedActions),
+                estimatedBytesFreed: limitedActions.reduce((sum, a) => sum + (a.bytesFreed || 0), 0),
+            };
+            const elapsedMs = Date.now() - startTime;
+            // Return MCP protocol format directly (no {success} wrapper)
+            const responseData = {
+                mode: params.dryRun ? 'preview' : 'execute',
+                safetyReport: formatSafetyReport(safetyReport),
+                actions: limitedActions,
+                summary,
+                performanceMs: elapsedMs,
+            };
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify(responseData, null, 2),
+                    },
+                ],
+            };
+        }
+        catch (error) {
+            const errorData = error instanceof z.ZodError
+                ? {
+                    code: -32602,
+                    message: 'Invalid parameters',
+                    validationErrors: error.errors,
+                }
+                : {
+                    code: -32603,
+                    message: 'Internal error during cleanup analysis',
+                    details: error instanceof Error ? error.message : String(error),
+                };
+            return {
+                content: [
+                    {
+                        type: 'text',
+                        text: JSON.stringify({ error: errorData }, null, 2),
+                    },
+                ],
+            };
+        }
+    };
+}
+/**
+ * Calculate action counts by type
+ */
+function calculateActionCounts(actions) {
+    const counts = {};
+    for (const action of actions) {
+        counts[action.type] = (counts[action.type] || 0) + 1;
+    }
+    return counts;
+}
+//# sourceMappingURL=index.js.map

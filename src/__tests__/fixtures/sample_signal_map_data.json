@@ -1,0 +1,53 @@
+{
+  "signals": [
+    {
+      "name": "player_health_changed",
+      "file": "autoload/EventBus.gd",
+      "line": 5,
+      "connections": [
+        { "file": "ui/HealthBar.gd", "line": 12 },
+        { "file": "components/HealthComponent.gd", "line": 45 }
+      ]
+    },
+    {
+      "name": "player_died",
+      "file": "autoload/EventBus.gd",
+      "line": 6,
+      "connections": [
+        { "file": "scenes/GameManager.gd", "line": 78 },
+        { "file": "ui/DeathScreen.gd", "line": 23 }
+      ]
+    },
+    {
+      "name": "combat_started",
+      "file": "autoload/EventBus.gd",
+      "line": 11,
+      "connections": [
+        { "file": "systems/CombatSystem.gd", "line": 56 },
+        { "file": "ui/CombatUI.gd", "line": 34 }
+      ]
+    },
+    {
+      "name": "quest_completed",
+      "file": "autoload/EventBus.gd",
+      "line": 21,
+      "connections": [
+        { "file": "systems/QuestManager.gd", "line": 89 },
+        { "file": "ui/QuestLog.gd", "line": 67 }
+      ]
+    },
+    {
+      "name": "item_added",
+      "file": "autoload/EventBus.gd",
+      "line": 25,
+      "connections": [
+        { "file": "systems/InventoryManager.gd", "line": 123 },
+        { "file": "ui/InventoryUI.gd", "line": 45 }
+      ]
+    }
+  ],
+  "filters": {
+    "signalPattern": "",
+    "filePattern": ""
+  }
+}

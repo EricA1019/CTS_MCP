@@ -1,0 +1,90 @@
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "CTS_Render_Artifact",
+    "arguments": {
+      "artifactType": "hop_dashboard",
+      "data": {
+        "currentPhase": "Phase CTS_MCP_1",
+        "phases": [
+          {
+            "name": "Phase 1: Foundation",
+            "hops": [
+              {
+                "id": "5.1a",
+                "name": "Core MCP Server & Shrimp Integration",
+                "status": "completed",
+                "description": "MCP server boilerplate with stdio transport and automated Shrimp task creation",
+                "estimatedLOC": 400,
+                "actualLOC": 395,
+                "ctsCompliant": true,
+                "phase": "Phase 1",
+                "dependencies": [],
+                "tests": {
+                  "total": 15,
+                  "passing": 15,
+                  "coverage": 85
+                }
+              },
+              {
+                "id": "5.1b",
+                "name": "Signal Map & Hop Dashboard",
+                "status": "in_progress",
+                "description": "D3.js force-directed graph for signals and React dashboard for hops",
+                "estimatedLOC": 350,
+                "actualLOC": 320,
+                "ctsCompliant": true,
+                "phase": "Phase 1",
+                "dependencies": ["5.1a"],
+                "tests": {
+                  "total": 20,
+                  "passing": 18,
+                  "coverage": 75
+                }
+              }
+            ]
+          },
+          {
+            "name": "Phase 2: Advanced Features",
+            "hops": [
+              {
+                "id": "5.2a",
+                "name": "Dependency Graph Renderer",
+                "status": "planned",
+                "description": "Visualize hop dependencies and critical path",
+                "estimatedLOC": 250,
+                "actualLOC": 0,
+                "ctsCompliant": true,
+                "phase": "Phase 2",
+                "dependencies": ["5.1b"]
+              },
+              {
+                "id": "5.2b",
+                "name": "Performance Charts",
+                "status": "planned",
+                "description": "Track LOC growth, test coverage trends over time",
+                "estimatedLOC": 300,
+                "actualLOC": 0,
+                "ctsCompliant": true,
+                "phase": "Phase 2",
+                "dependencies": ["5.1b"]
+              }
+            ]
+          }
+        ],
+        "stats": {
+          "totalLOC": 715,
+          "plannedLOC": 1300,
+          "ctsComplianceRate": 100,
+          "completionRate": 50
+        }
+      },
+      "metadata": {
+        "title": "CTS Hop Dashboard",
+        "description": "Real-time phase progress and CTS compliance tracking"
+      }
+    }
+  }
+}

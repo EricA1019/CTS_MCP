@@ -1,0 +1,58 @@
+{
+  "phases": [
+    {
+      "name": "Phase 1: Foundation",
+      "hops": [
+        {
+          "id": "5.1a",
+          "name": "MCP Core Infrastructure",
+          "status": "completed",
+          "estimatedLOC": 400,
+          "actualLOC": 421,
+          "ctsCompliant": true,
+          "dependencies": [],
+          "testCoverage": 85
+        },
+        {
+          "id": "5.1b",
+          "name": "Artifact Visualizations",
+          "status": "completed",
+          "estimatedLOC": 350,
+          "actualLOC": 294,
+          "ctsCompliant": true,
+          "dependencies": ["5.1a"],
+          "testCoverage": 78
+        }
+      ]
+    },
+    {
+      "name": "Phase 2: Advanced Features",
+      "hops": [
+        {
+          "id": "5.2a",
+          "name": "Dependency Graph Renderer",
+          "status": "planned",
+          "estimatedLOC": 300,
+          "actualLOC": 0,
+          "ctsCompliant": true,
+          "dependencies": ["5.1b"]
+        },
+        {
+          "id": "5.2b",
+          "name": "Performance Charts",
+          "status": "planned",
+          "estimatedLOC": 250,
+          "actualLOC": 0,
+          "ctsCompliant": true,
+          "dependencies": ["5.2a"]
+        }
+      ]
+    }
+  ],
+  "statistics": {
+    "totalLOC": 715,
+    "plannedLOC": 1300,
+    "complianceRate": 100,
+    "completionRate": 50
+  }
+}

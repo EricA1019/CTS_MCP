@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Signal Map - D3.js Force-Directed Graph</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #1e1e1e;
+      color: #d4d4d4;
+      overflow: hidden;
+    }
+
+    #graph-container {
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+
+    svg {
+      width: 100%;
+      height: 100%;
+    }
+
+    .node {
+      cursor: pointer;
+      stroke: #fff;
+      stroke-width: 1.5px;
+    }
+
+    .node:hover {
+      stroke: #ffa500;
+      stroke-width: 3px;
+    }
+
+    .node-label {
+      font-size: 10px;
+      pointer-events: none;
+      user-select: none;
+      fill: #d4d4d4;
+      text-shadow: 0 0 3px #000, 0 0 3px #000, 0 0 3px #000;
+    }
+
+    .link {
+      stroke: #999;
+      stroke-opacity: 0.6;
+      stroke-width: 1.5px;
+    }
+
+    .tooltip {
+      position: absolute;
+      padding: 10px;
+      background: #252526;
+      border: 1px solid #007acc;
+      border-radius: 4px;
+      pointer-events: none;
+      opacity: 0;
+      transition: opacity 0.2s;
+      max-width: 300px;
+      z-index: 1000;
+    }
+
+    .tooltip.show {
+      opacity: 1;
+    }
+
+    .tooltip h4 {
+      margin: 0 0 5px 0;
+      color: #007acc;
+    }
+
+    .tooltip p {
+      margin: 3px 0;
+      font-size: 12px;
+    }
+
+    .controls {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: #252526;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #007acc;
+      z-index: 100;
+    }
+
+    .controls h3 {
+      margin: 0 0 10px 0;
+      color: #007acc;
+      font-size: 14px;
+    }
+
+    .controls p {
+      margin: 5px 0;
+      font-size: 12px;
+    }
+
+    .legend {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: #252526;
+      padding: 10px;
+      border-radius: 4px;
+      border: 1px solid #007acc;
+      z-index: 100;
+    }
+
+    .legend h4 {
+      margin: 0 0 10px 0;
+      color: #007acc;
+      font-size: 14px;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      margin: 5px 0;
+      font-size: 12px;
+    }
+
+    .legend-color {
+      width: 15px;
+      height: 15px;
+      border-radius: 50%;
+      margin-right: 8px;
+      border: 1px solid #fff;
+    }
+  </style>
+</head>
+<body>
+  <div id="graph-container">
+    <svg id="graph"></svg>
+    
+    <div class="controls">
+      <h3>🗺️ Signal Map</h3>
+      <p><strong>Total Signals:</strong> 55</p>
+      <p><strong>EventBus:</strong> 55</p>
+      <p><strong>SignalBus:</strong> 0</p>
+      <p style="margin-top: 10px; color: #858585; font-size: 11px;">
+        Click nodes to view details<br>
+        Drag nodes to rearrange<br>
+        Scroll to zoom
+      </p>
+    </div>
+
+    <div class="legend">
+      <h4>Legend</h4>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #1f77b4;"></div>
+        <span>EventBus Signals</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #ff7f0e;"></div>
+        <span>SignalBus Signals</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #2ca02c;"></div>
+        <span>Component Signals</span>
+      </div>
+    </div>
+
+    <div class="tooltip" id="tooltip"></div>
+  </div>
+
+  <script>
+    // Data
+    const nodes = [{"id":"plugin_initialized","label":"plugin_initialized","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":38,"params":["plugin_name"],"paramTypes":{"plugin_name":"String"},"index":0},{"id":"plugin_shutdown","label":"plugin_shutdown","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":42,"params":["plugin_name"],"paramTypes":{"plugin_name":"String"},"index":1},{"id":"validation_started","label":"validation_started","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":51,"params":["tier","context"],"paramTypes":{"tier":"int","context":"Dictionary"},"index":2},{"id":"validation_completed","label":"validation_completed","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":57,"params":["tier","result","duration_ms"],"paramTypes":{"tier":"int","result":"Dictionary","duration_ms":"int"},"index":3},{"id":"validation_budget_exceeded","label":"validation_budget_exceeded","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":63,"params":["tier","budget_ms","actual_ms"],"paramTypes":{"tier":"int","budget_ms":"int","actual_ms":"int"},"index":4},{"id":"validation_tier_started","label":"validation_tier_started","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":69,"params":["file_path","tier"],"paramTypes":{"file_path":"String","tier":"int"},"index":5},{"id":"validation_tier_completed","label":"validation_tier_completed","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":76,"params":["file_path","tier","errors"],"paramTypes":{"file_path":"String","tier":"int","errors":"Array"},"index":6},{"id":"validation_queued","label":"validation_queued","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":81,"params":["tier","deferred_to"],"paramTypes":{"tier":"int","deferred_to":"int"},"index":7},{"id":"damage_dealt","label":"damage_dealt","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":92,"params":["attacker","target","amount","damage_type"],"paramTypes":{"attacker":"Node","target":"Node","amount":"int","damage_type":"String"},"index":8},{"id":"combat_round_started","label":"combat_round_started","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":96,"params":["round_number"],"paramTypes":{"round_number":"int"},"index":9},{"id":"health_changed","label":"health_changed","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":102,"params":["entity","old_health","new_health"],"paramTypes":{"entity":"Node","old_health":"int","new_health":"int"},"index":10},{"id":"combat_started","label":"combat_started","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":106,"params":["combatants"],"paramTypes":{"combatants":"Array"},"index":11},{"id":"turn_started","label":"turn_started","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":110,"params":["socket"],"paramTypes":{"socket":"IndieBlueprintTurnitySocket"},"index":12},{"id":"combat_ended","label":"combat_ended","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":115,"params":["victory","survivors"],"paramTypes":{"victory":"bool","survivors":"Array"},"index":13},{"id":"death_occurred","label":"death_occurred","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":124,"params":["entity","is_player"],"paramTypes":{"entity":"Node","is_player":"bool"},"index":14},{"id":"resurrection_offered","label":"resurrection_offered","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":128,"params":["accepted"],"paramTypes":{"accepted":"bool"},"index":15},{"id":"npc_permadeath","label":"npc_permadeath","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":132,"params":["npc_id"],"paramTypes":{"npc_id":"String"},"index":16},{"id":"ui_panel_updated","label":"ui_panel_updated","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":141,"params":["panel_name","data"],"paramTypes":{"panel_name":"String","data":"Dictionary"},"index":17},{"id":"ui_status_label_updated","label":"ui_status_label_updated","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":145,"params":["status_data"],"paramTypes":{"status_data":"Dictionary"},"index":18},{"id":"template_instantiated","label":"template_instantiated","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":154,"params":["template_id","scene_path"],"paramTypes":{"template_id":"String","scene_path":"String"},"index":19},{"id":"template_registered","label":"template_registered","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":159,"params":["template_id","category"],"paramTypes":{"template_id":"String","category":"String"},"index":20},{"id":"instantiation_failed","label":"instantiation_failed","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":164,"params":["template_id","error"],"paramTypes":{"template_id":"String","error":"String"},"index":21},{"id":"registry_loaded","label":"registry_loaded","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":169,"params":["template_count","categories"],"paramTypes":{"template_count":"int","categories":"Array"},"index":22},{"id":"template_validated","label":"template_validated","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":175,"params":["template_id","valid","errors"],"paramTypes":{"template_id":"String","valid":"bool","errors":"Array"},"index":23},{"id":"hud_stat_updated","label":"hud_stat_updated","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":180,"params":["stat_name","new_value"],"paramTypes":{"stat_name":"String","new_value":"float"},"index":24},{"id":"hud_visibility_changed","label":"hud_visibility_changed","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":184,"params":["visible"],"paramTypes":{"visible":"bool"},"index":25},{"id":"player_stat_changed","label":"player_stat_changed","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":190,"params":["stat_name","new_value","max_value"],"paramTypes":{"stat_name":"String","new_value":"float","max_value":"float"},"index":26},{"id":"ui_panel_toggled","label":"ui_panel_toggled","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":195,"params":["panel_name","visible"],"paramTypes":{"panel_name":"String","visible":"bool"},"index":27},{"id":"rust_method_called","label":"rust_method_called","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":202,"params":["rust_class","method_name"],"paramTypes":{},"index":28},{"id":"rust_method_completed","label":"rust_method_completed","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":205,"params":["rust_class","method_name"],"paramTypes":{},"index":29},{"id":"rust_method_failed","label":"rust_method_failed","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":208,"params":["rust_class","method_name","error_msg"],"paramTypes":{},"index":30},{"id":"code_generated","label":"code_generated","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":215,"params":["template_key","output_path"],"paramTypes":{},"index":31},{"id":"code_generation_failed","label":"code_generation_failed","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":218,"params":["template_key","error_msg"],"paramTypes":{},"index":32},{"id":"mcp_server_connected","label":"mcp_server_connected","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":227,"params":["server_id","server_info"],"paramTypes":{"server_id":"String","server_info":"Dictionary"},"index":33},{"id":"mcp_server_connection_failed","label":"mcp_server_connection_failed","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":232,"params":["server_id","error_message"],"paramTypes":{"server_id":"String","error_message":"String"},"index":34},{"id":"mcp_server_disconnected","label":"mcp_server_disconnected","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":237,"params":["server_id","reason"],"paramTypes":{"server_id":"String","reason":"String"},"index":35},{"id":"mcp_request_sent","label":"mcp_request_sent","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":243,"params":["request_id","server_id","method"],"paramTypes":{"request_id":"int","server_id":"String","method":"String"},"index":36},{"id":"mcp_response_received","label":"mcp_response_received","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":249,"params":["server_id","request_id","result"],"paramTypes":{"server_id":"String","request_id":"int","result":"Variant"},"index":37},{"id":"mcp_request_failed","label":"mcp_request_failed","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":255,"params":["server_id","request_id","error_message"],"paramTypes":{"server_id":"String","request_id":"int","error_message":"String"},"index":38},{"id":"scene_transition_started","label":"scene_transition_started","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":263,"params":["scene_path"],"paramTypes":{"scene_path":"String"},"index":39},{"id":"scene_transition_completed","label":"scene_transition_completed","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":267,"params":["scene_path"],"paramTypes":{"scene_path":"String"},"index":40},{"id":"player_moved","label":"player_moved","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":277,"params":["old_pos","new_pos","tile_type"],"paramTypes":{"old_pos":"Vector2i","new_pos":"Vector2i","tile_type":"String"},"index":41},{"id":"log_message_added","label":"log_message_added","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":287,"params":["message","message_type","priority"],"paramTypes":{"message":"String","message_type":"int","priority":"int"},"index":42},{"id":"item_equipped","label":"item_equipped","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":297,"params":["item_id","slot","stat_changes"],"paramTypes":{"item_id":"String","slot":"int","stat_changes":"Dictionary"},"index":43},{"id":"settlement_state_changed","label":"settlement_state_changed","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":305,"params":["state_snapshot"],"paramTypes":{"state_snapshot":"Dictionary"},"index":44},{"id":"building_constructed","label":"building_constructed","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":310,"params":["building_resource_path","settlement_id"],"paramTypes":{"building_resource_path":"String","settlement_id":"String"},"index":45},{"id":"resource_produced","label":"resource_produced","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":316,"params":["resource_type","amount","building_id"],"paramTypes":{"resource_type":"String","amount":"int","building_id":"String"},"index":46},{"id":"militia_recruited","label":"militia_recruited","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":321,"params":["unit_data","settlement_id"],"paramTypes":{"unit_data":"Dictionary","settlement_id":"String"},"index":47},{"id":"settlement_production_tick","label":"settlement_production_tick","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":325,"params":["current_time"],"paramTypes":{"current_time":"Dictionary"},"index":48},{"id":"settlement_saved","label":"settlement_saved","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":330,"params":["settlement_id","save_data"],"paramTypes":{"settlement_id":"String","save_data":"Dictionary"},"index":49},{"id":"settlement_morale_changed","label":"settlement_morale_changed","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":337,"params":["settlement_id","old_morale","new_morale","reason"],"paramTypes":{"settlement_id":"String","old_morale":"int","new_morale":"int","reason":"String"},"index":50},{"id":"procgen_ruin_generated","label":"procgen_ruin_generated","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":343,"params":["ruin_id","ruin_data","seed_value"],"paramTypes":{"ruin_id":"String","ruin_data":"Dictionary","seed_value":"int"},"index":51},{"id":"credits_started","label":"credits_started","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":350,"params":[],"paramTypes":{},"index":52},{"id":"credits_finished","label":"credits_finished","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":353,"params":[],"paramTypes":{},"index":53},{"id":"demo_replay_requested","label":"demo_replay_requested","group":"EventBus","filePath":"/home/eric/Godot/ProtoBd/autoload/EventBus.gd","line":356,"params":[],"paramTypes":{},"index":54}];
+    const links = [];
+
+    // Dimensions
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+
+    // Color scale
+    const colorScale = d3.scaleOrdinal()
+      .domain(['EventBus', 'SignalBus', 'Component'])
+      .range(['#1f77b4', '#ff7f0e', '#2ca02c']);
+
+    // SVG setup
+    const svg = d3.select('#graph');
+    const g = svg.append('g');
+
+    // Zoom behavior
+    const zoom = d3.zoom()
+      .scaleExtent([0.1, 4])
+      .on('zoom', (event) => {
+        g.attr('transform', event.transform);
+      });
+
+    svg.call(zoom);
+
+    // Force simulation
+    const simulation = d3.forceSimulation(nodes)
+      .force('link', d3.forceLink(links).id(d => d.id).distance(100))
+      .force('charge', d3.forceManyBody().strength(-300))
+      .force('center', d3.forceCenter(width / 2, height / 2))
+      .force('collision', d3.forceCollide().radius(30));
+
+    // Links
+    const link = g.append('g')
+      .attr('class', 'links')
+      .selectAll('line')
+      .data(links)
+      .join('line')
+      .attr('class', 'link');
+
+    // Nodes
+    const node = g.append('g')
+      .attr('class', 'nodes')
+      .selectAll('g')
+      .data(nodes)
+      .join('g');
+
+    node.append('circle')
+      .attr('class', 'node')
+      .attr('r', 8)
+      .attr('fill', d => colorScale(d.group))
+      .on('click', handleNodeClick)
+      .on('mouseover', handleNodeMouseOver)
+      .on('mouseout', handleNodeMouseOut)
+      .call(d3.drag()
+        .on('start', dragStarted)
+        .on('drag', dragged)
+        .on('end', dragEnded));
+
+    // Labels
+    node.append('text')
+      .attr('class', 'node-label')
+      .attr('dx', 12)
+      .attr('dy', 4)
+      .text(d => d.label);
+
+    // Simulation tick
+    simulation.on('tick', () => {
+      link
+        .attr('x1', d => d.source.x)
+        .attr('y1', d => d.source.y)
+        .attr('x2', d => d.target.x)
+        .attr('y2', d => d.target.y);
+
+      node.attr('transform', d => `translate(${d.x},${d.y})`);
+    });
+
+    // Tooltip
+    const tooltip = d3.select('#tooltip');
+
+    function handleNodeClick(event, d) {
+      event.stopPropagation();
+      
+      // Send message to VS Code extension
+      if (window.parent !== window) {
+        window.parent.postMessage({
+          type: 'artifact_interaction',
+          action: 'open_file',
+          payload: {
+            filePath: d.filePath,
+            line: d.line
+          }
+        }, '*');
+      }
+
+      console.log('[Signal Map] Node clicked:', d);
+    }
+
+    function handleNodeMouseOver(event, d) {
+      const params = d.params && d.params.length > 0
+        ? d.params.map(p => {
+            const type = d.paramTypes[p];
+            return type ? `${p}: ${type}` : p;
+          }).join(', ')
+        : 'none';
+
+      tooltip.html(`
+        <h4>${d.label}</h4>
+        <p><strong>Source:</strong> ${d.group}</p>
+        <p><strong>Parameters:</strong> ${params}</p>
+        <p><strong>File:</strong> ${d.filePath.split('/').pop()}</p>
+        <p><strong>Line:</strong> ${d.line}</p>
+        <p style="margin-top: 8px; color: #007acc; font-size: 11px;">Click to open in editor</p>
+      `)
+        .classed('show', true)
+        .style('left', (event.pageX + 10) + 'px')
+        .style('top', (event.pageY + 10) + 'px');
+    }
+
+    function handleNodeMouseOut() {
+      tooltip.classed('show', false);
+    }
+
+    // Drag handlers
+    function dragStarted(event) {
+      if (!event.active) simulation.alphaTarget(0.3).restart();
+      event.subject.fx = event.subject.x;
+      event.subject.fy = event.subject.y;
+    }
+
+    function dragged(event) {
+      event.subject.fx = event.x;
+      event.subject.fy = event.y;
+    }
+
+    function dragEnded(event) {
+      if (!event.active) simulation.alphaTarget(0);
+      event.subject.fx = null;
+      event.subject.fy = null;
+    }
+
+    // Initial zoom to fit
+    setTimeout(() => {
+      const bounds = g.node().getBBox();
+      const fullWidth = bounds.width;
+      const fullHeight = bounds.height;
+      const midX = bounds.x + fullWidth / 2;
+      const midY = bounds.y + fullHeight / 2;
+
+      if (fullWidth === 0 || fullHeight === 0) return;
+
+      const scale = 0.9 / Math.max(fullWidth / width, fullHeight / height);
+      const translate = [width / 2 - scale * midX, height / 2 - scale * midY];
+
+      svg.transition()
+        .duration(750)
+        .call(zoom.transform, d3.zoomIdentity.translate(translate[0], translate[1]).scale(scale));
+    }, 1000);
+
+    // Send ready message
+    console.log('[Signal Map] D3.js renderer loaded');
+    console.log('[Signal Map] Nodes:', nodes.length);
+    console.log('[Signal Map] Links:', links.length);
+    
+    if (window.parent !== window) {
+      window.parent.postMessage({ type: 'artifact_ready', artifactType: 'signal_map' }, '*');
+    }
+  </script>
+</body>
+</html>

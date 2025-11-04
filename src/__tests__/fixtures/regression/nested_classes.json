@@ -1,0 +1,40 @@
+{
+  "fixture": "nested_classes",
+  "description": "Nested class signal definitions",
+  "expectedSignals": [
+    {
+      "name": "inner_signal_activated",
+      "params": [],
+      "filePath": "nested_classes.gd",
+      "line": 5,
+      "source": "signal inner_signal_activated"
+    },
+    {
+      "name": "inner_data_changed",
+      "params": ["value"],
+      "filePath": "nested_classes.gd",
+      "line": 6,
+      "source": "signal inner_data_changed(value: int)",
+      "paramTypes": {
+        "value": "int"
+      }
+    },
+    {
+      "name": "deeply_nested_event",
+      "params": ["msg"],
+      "filePath": "nested_classes.gd",
+      "line": 12,
+      "source": "signal deeply_nested_event(msg: String)",
+      "paramTypes": {
+        "msg": "String"
+      }
+    },
+    {
+      "name": "outer_signal",
+      "params": [],
+      "filePath": "nested_classes.gd",
+      "line": 18,
+      "source": "signal outer_signal"
+    }
+  ]
+}

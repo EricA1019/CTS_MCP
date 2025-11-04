@@ -1,0 +1,177 @@
+name: CTS Audit
+
+# Run CTS audit on pushes and pull requests
+# Enforces code quality thresholds and caches results for faster CI runs
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:  # Allow manual triggering
+
+# Permissions needed for PR comments
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  cts-audit:
+    name: CTS Quality Audit
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for better caching
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+      
+      - name: Install CTS MCP Server
+        run: |
+          cd cts_mcp
+          npm ci
+          npm run build
+      
+      # Cache CTS audit results based on file hashes
+      - name: Cache CTS results
+        uses: actions/cache@v4
+        with:
+          path: |
+            .cts_cache/
+            cts_mcp/.cts_cache/
+          key: cts-cache-${{ runner.os }}-${{ hashFiles('**/*.gd', '**/*.gdscript') }}
+          restore-keys: |
+            cts-cache-${{ runner.os }}-
+      
+      - name: Run CTS Audit
+        id: audit
+        run: |
+          cd cts_mcp
+          # Run audit and save results
+          node build/index.js cts_audit '{
+            "projectPath": "../",
+            "categories": ["cts", "code_quality", "project_structure"],
+            "minScore": 75,
+            "format": "json"
+          }' > audit_results.json || true
+          
+          # Extract score
+          SCORE=$(jq -r '.content[0].text | fromjson | .overallScore' audit_results.json 2>/dev/null || echo "0")
+          echo "score=$SCORE" >> $GITHUB_OUTPUT
+          echo "CTS Audit Score: $SCORE/100"
+          
+          # Save full report
+          jq '.content[0].text | fromjson' audit_results.json > ../cts_audit_report.json
+      
+      - name: Check quality threshold
+        env:
+          MIN_SCORE: 75
+          ACTUAL_SCORE: ${{ steps.audit.outputs.score }}
+        run: |
+          echo "Minimum required score: $MIN_SCORE"
+          echo "Actual score: $ACTUAL_SCORE"
+          
+          if (( $(echo "$ACTUAL_SCORE < $MIN_SCORE" | bc -l) )); then
+            echo "❌ CTS audit failed: score $ACTUAL_SCORE is below threshold $MIN_SCORE"
+            exit 1
+          else
+            echo "✅ CTS audit passed: score $ACTUAL_SCORE meets threshold $MIN_SCORE"
+          fi
+      
+      - name: Generate audit summary
+        if: always()
+        run: |
+          cd cts_mcp
+          cat << 'EOF' >> $GITHUB_STEP_SUMMARY
+          ## 📊 CTS Quality Audit Results
+          
+          **Overall Score**: ${{ steps.audit.outputs.score }}/100
+          **Threshold**: 75/100
+          **Status**: ${{ steps.audit.outputs.score >= 75 && '✅ PASSED' || '❌ FAILED' }}
+          
+          ### Category Scores
+          EOF
+          
+          # Extract category scores from report
+          jq -r '.categoryScores | to_entries[] | "- **\(.key)**: \(.value)/100"' ../cts_audit_report.json >> $GITHUB_STEP_SUMMARY || true
+          
+          cat << 'EOF' >> $GITHUB_STEP_SUMMARY
+          
+          ### Top Violations
+          EOF
+          
+          # Show top 10 violations
+          jq -r '.violations[:10] | .[] | "- [\(.severity | ascii_upcase)] \(.file):\(.line) - \(.message)"' ../cts_audit_report.json >> $GITHUB_STEP_SUMMARY || true
+      
+      - name: Comment on PR
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const report = JSON.parse(fs.readFileSync('cts_audit_report.json', 'utf8'));
+            
+            const score = report.overallScore.toFixed(1);
+            const threshold = 75;
+            const passed = score >= threshold;
+            
+            // Format category scores
+            const categoryScores = Object.entries(report.categoryScores)
+              .map(([cat, score]) => `- **${cat}**: ${score.toFixed(1)}/100`)
+              .join('\n');
+            
+            // Format top violations
+            const violations = report.violations.slice(0, 10)
+              .map(v => `- [${v.severity.toUpperCase()}] \`${v.file}:${v.line}\` - ${v.message}`)
+              .join('\n');
+            
+            const body = `## 📊 CTS Quality Audit
+            
+            **Overall Score**: ${score}/100  
+            **Threshold**: ${threshold}/100  
+            **Status**: ${passed ? '✅ PASSED' : '❌ FAILED'}
+            
+            ### Category Scores
+            ${categoryScores}
+            
+            ### Top Violations
+            ${violations || '*No violations found*'}
+            
+            ${!passed ? '\n⚠️ **This PR does not meet the quality threshold.** Please address violations before merging.' : ''}
+            
+            <details>
+            <summary>Full Report</summary>
+            
+            \`\`\`json
+            ${JSON.stringify(report, null, 2).slice(0, 5000)}
+            \`\`\`
+            </details>`;
+            
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: body
+            });
+      
+      - name: Upload audit report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cts-audit-report
+          path: |
+            cts_audit_report.json
+            cts_mcp/audit_results.json
+          retention-days: 90
+      
+      - name: Fail if below threshold
+        if: steps.audit.outputs.score < 75
+        run: |
+          echo "❌ Build failed: CTS quality score below threshold"
+          exit 1

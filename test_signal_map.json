@@ -1,0 +1,20 @@
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "CTS_Render_Artifact",
+    "arguments": {
+      "artifactType": "signal_map",
+      "data": [
+        { "name": "player_moved", "source": "Player", "target": "CameraController" },
+        { "name": "item_collected", "source": "ItemPickup", "target": "Inventory" },
+        { "name": "combat_started", "source": "Enemy", "target": "CombatManager" }
+      ],
+      "metadata": {
+        "title": "Test Signal Map",
+        "description": "Sample signal connections for testing"
+      }
+    }
+  }
+}

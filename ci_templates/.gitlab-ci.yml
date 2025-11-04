@@ -1,0 +1,203 @@
+# GitLab CI Template for CTS Auditing
+# Copy this to your project root as .gitlab-ci.yml
+
+# Docker image with Node.js 20
+image: node:20
+
+# Define stages
+stages:
+  - setup
+  - audit
+  - report
+
+# Global variables
+variables:
+  MIN_CTS_SCORE: "75"
+  CTS_MCP_DIR: "cts_mcp"
+  CACHE_COMPRESSION_LEVEL: "fast"
+
+# Cache dependencies and CTS results
+cache:
+  key:
+    files:
+      - ${CTS_MCP_DIR}/package-lock.json
+      - '**/*.gd'
+      - '**/*.gdscript'
+  paths:
+    - ${CTS_MCP_DIR}/node_modules/
+    - .cts_cache/
+    - ${CTS_MCP_DIR}/.cts_cache/
+  policy: pull-push
+
+# Install dependencies (runs first)
+install_dependencies:
+  stage: setup
+  script:
+    - cd ${CTS_MCP_DIR}
+    - npm ci
+    - npm run build
+  artifacts:
+    paths:
+      - ${CTS_MCP_DIR}/build/
+    expire_in: 1 hour
+  cache:
+    key:
+      files:
+        - ${CTS_MCP_DIR}/package-lock.json
+    paths:
+      - ${CTS_MCP_DIR}/node_modules/
+    policy: pull-push
+
+# Run CTS audit (parallel jobs for different categories)
+cts_audit_full:
+  stage: audit
+  dependencies:
+    - install_dependencies
+  script:
+    - cd ${CTS_MCP_DIR}
+    - |
+      # Run full audit
+      node build/index.js cts_audit "{
+        \"projectPath\": \"../\",
+        \"categories\": [\"cts\", \"code_quality\", \"project_structure\"],
+        \"minScore\": ${MIN_CTS_SCORE},
+        \"format\": \"json\"
+      }" > audit_results.json || true
+      
+      # Extract score
+      SCORE=$(jq -r '.content[0].text | fromjson | .overallScore' audit_results.json 2>/dev/null || echo "0")
+      echo "CTS Audit Score: $SCORE/100"
+      echo "CTS_SCORE=$SCORE" >> audit.env
+      
+      # Save formatted report
+      jq '.content[0].text | fromjson' audit_results.json > ../cts_audit_report.json
+      
+      # Check threshold
+      if (( $(echo "$SCORE < $MIN_CTS_SCORE" | bc -l) )); then
+        echo "❌ CTS audit failed: score $SCORE is below threshold $MIN_CTS_SCORE"
+        exit 1
+      else
+        echo "✅ CTS audit passed: score $SCORE meets threshold $MIN_CTS_SCORE"
+      fi
+  artifacts:
+    reports:
+      dotenv: ${CTS_MCP_DIR}/audit.env
+    paths:
+      - cts_audit_report.json
+      - ${CTS_MCP_DIR}/audit_results.json
+    expire_in: 30 days
+    when: always
+  cache:
+    key:
+      files:
+        - '**/*.gd'
+        - '**/*.gdscript'
+    paths:
+      - .cts_cache/
+      - ${CTS_MCP_DIR}/.cts_cache/
+    policy: pull-push
+
+# Parallel job: CTS standards only
+cts_audit_cts_only:
+  stage: audit
+  dependencies:
+    - install_dependencies
+  script:
+    - cd ${CTS_MCP_DIR}
+    - |
+      node build/index.js cts_audit "{
+        \"projectPath\": \"../\",
+        \"categories\": [\"cts\"],
+        \"format\": \"json\"
+      }" > audit_cts.json || true
+      
+      SCORE=$(jq -r '.content[0].text | fromjson | .overallScore' audit_cts.json 2>/dev/null || echo "0")
+      echo "CTS-only Score: $SCORE/100"
+  artifacts:
+    paths:
+      - ${CTS_MCP_DIR}/audit_cts.json
+    expire_in: 7 days
+    when: always
+  allow_failure: true
+
+# Parallel job: Code quality only
+cts_audit_quality_only:
+  stage: audit
+  dependencies:
+    - install_dependencies
+  script:
+    - cd ${CTS_MCP_DIR}
+    - |
+      node build/index.js cts_audit "{
+        \"projectPath\": \"../\",
+        \"categories\": [\"code_quality\"],
+        \"format\": \"json\"
+      }" > audit_quality.json || true
+      
+      SCORE=$(jq -r '.content[0].text | fromjson | .overallScore' audit_quality.json 2>/dev/null || echo "0")
+      echo "Code Quality Score: $SCORE/100"
+  artifacts:
+    paths:
+      - ${CTS_MCP_DIR}/audit_quality.json
+    expire_in: 7 days
+    when: always
+  allow_failure: true
+
+# Generate comprehensive report
+generate_report:
+  stage: report
+  dependencies:
+    - cts_audit_full
+  script:
+    - |
+      echo "## 📊 CTS Quality Audit Results" > report.md
+      echo "" >> report.md
+      echo "**Overall Score**: ${CTS_SCORE}/100" >> report.md
+      echo "**Threshold**: ${MIN_CTS_SCORE}/100" >> report.md
+      echo "**Status**: $([ ${CTS_SCORE%.*} -ge ${MIN_CTS_SCORE} ] && echo '✅ PASSED' || echo '❌ FAILED')" >> report.md
+      echo "" >> report.md
+      
+      echo "### Category Scores" >> report.md
+      jq -r '.categoryScores | to_entries[] | "- **\(.key)**: \(.value)/100"' cts_audit_report.json >> report.md || true
+      
+      echo "" >> report.md
+      echo "### Top Violations" >> report.md
+      jq -r '.violations[:10] | .[] | "- [\(.severity | ascii_upcase)] \(.file):\(.line) - \(.message)"' cts_audit_report.json >> report.md || true
+      
+      cat report.md
+  artifacts:
+    paths:
+      - report.md
+    expire_in: 30 days
+  when: always
+
+# Merge request comment (requires GitLab API access)
+post_mr_comment:
+  stage: report
+  dependencies:
+    - cts_audit_full
+    - generate_report
+  script:
+    - |
+      if [ -n "$CI_MERGE_REQUEST_IID" ]; then
+        COMMENT=$(cat report.md)
+        
+        curl --request POST \
+          --header "PRIVATE-TOKEN: $GITLAB_TOKEN" \
+          --header "Content-Type: application/json" \
+          --data "{\"body\": $(jq -Rs . report.md)}" \
+          "${CI_API_V4_URL}/projects/${CI_PROJECT_ID}/merge_requests/${CI_MERGE_REQUEST_IID}/notes"
+      else
+        echo "Not a merge request, skipping comment"
+      fi
+  only:
+    - merge_requests
+  when: always
+  allow_failure: true
+
+# Run only on main/develop branches
+workflow:
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main" || $CI_COMMIT_BRANCH == "develop"
+    - if: $CI_MERGE_REQUEST_IID
+    - if: $CI_PIPELINE_SOURCE == "web"  # Allow manual runs

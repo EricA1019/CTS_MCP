@@ -1,0 +1,36 @@
+{
+  "fixture": "string_literals",
+  "description": "String literals and escape sequences in signal context",
+  "expectedSignals": [
+    {
+      "name": "message_logged",
+      "params": ["msg"],
+      "filePath": "string_literals.gd",
+      "line": 4,
+      "source": "signal message_logged(msg: String)",
+      "paramTypes": {
+        "msg": "String"
+      }
+    },
+    {
+      "name": "path_updated",
+      "params": ["filepath"],
+      "filePath": "string_literals.gd",
+      "line": 5,
+      "source": "signal path_updated(filepath: String)",
+      "paramTypes": {
+        "filepath": "String"
+      }
+    },
+    {
+      "name": "regex_pattern_changed",
+      "params": ["pattern"],
+      "filePath": "string_literals.gd",
+      "line": 6,
+      "source": "signal regex_pattern_changed(pattern: String)",
+      "paramTypes": {
+        "pattern": "String"
+      }
+    }
+  ]
+}

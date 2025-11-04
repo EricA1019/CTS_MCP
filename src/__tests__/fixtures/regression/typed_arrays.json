@@ -1,0 +1,37 @@
+{
+  "fixture": "typed_arrays",
+  "description": "Static typed array parameters (Godot 4.x)",
+  "expectedSignals": [
+    {
+      "name": "entities_spawned",
+      "params": ["entities"],
+      "filePath": "typed_arrays.gd",
+      "line": 4,
+      "source": "signal entities_spawned(entities: Array[Node])",
+      "paramTypes": {
+        "entities": "Array[Node]"
+      }
+    },
+    {
+      "name": "positions_updated",
+      "params": ["coords"],
+      "filePath": "typed_arrays.gd",
+      "line": 5,
+      "source": "signal positions_updated(coords: Array[Vector2])",
+      "paramTypes": {
+        "coords": "Array[Vector2]"
+      }
+    },
+    {
+      "name": "inventory_changed",
+      "params": ["items", "quantities"],
+      "filePath": "typed_arrays.gd",
+      "line": 6,
+      "source": "signal inventory_changed(items: Array[String], quantities: Array[int])",
+      "paramTypes": {
+        "items": "Array[String]",
+        "quantities": "Array[int]"
+      }
+    }
+  ]
+}

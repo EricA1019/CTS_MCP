@@ -1,0 +1,86 @@
+{
+  "_comment": "CTS MCP Configuration File - Example with all available options",
+  "version": "1.0",
+  
+  "rules": {
+    "_comment_rules": "CTS Rule Thresholds - Customize compliance limits for your project",
+    
+    "maxFileLines": 500,
+    "maxFunctionLines": 50,
+    "maxClassLines": 300,
+    "maxHopLOC": 1500,
+    "maxSubHops": 5,
+    "maxCyclomaticComplexity": 10,
+    "maxNestingDepth": 4,
+    "minSignalUsage": 70,
+    "maxDirectCalls": 30,
+    "requireTypeHints": true,
+    "requireDocstrings": false,
+    "minTestCoverage": 0
+  },
+  
+  "exclusions": [
+    "**/addons/**",
+    "**/.godot/**",
+    "**/tests/**",
+    "**/examples/**",
+    "**/build/**",
+    "**/dist/**"
+  ],
+  
+  "tools": {
+    "_comment_tools": "Tool-specific configuration overrides",
+    
+    "bughunter": {
+      "minSeverity": "medium",
+      "maxFiles": 1000,
+      "excludePatterns": ["**/addons/**", "**/.godot/**"],
+      "enableCache": true,
+      "cacheTTL": 3600000
+    },
+    
+    "audit": {
+      "categories": ["cts", "code_quality", "project_structure"],
+      "minScore": 75,
+      "format": "json",
+      "maxViolations": 100,
+      "enableCache": true
+    },
+    
+    "signalScan": {
+      "renderMap": true,
+      "excludePatterns": ["**/addons/**", "**/.godot/**"],
+      "includePrivate": false,
+      "maxSignals": 1000,
+      "enableCache": true
+    },
+    
+    "analysis": {
+      "detectUnused": true,
+      "buildHierarchy": true,
+      "minClusterSize": 5,
+      "performanceBaseline": false,
+      "enableCache": true
+    },
+    
+    "refactoring": {
+      "includeRename": true,
+      "includeMerge": true,
+      "includeDeprecate": false,
+      "minConfidence": 0.95,
+      "maxSuggestions": 20
+    },
+    
+    "reasoning": {
+      "maxIterations": 10,
+      "initialStage": "Problem Definition",
+      "enableCache": false
+    }
+  },
+  
+  "team": {
+    "_comment_team": "Team metadata (optional)",
+    "name": "Your Team Name",
+    "standards": "https://link-to-your-coding-standards.com"
+  }
+}

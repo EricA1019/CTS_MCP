@@ -1,0 +1,37 @@
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "CTS_Render_Artifact",
+    "arguments": {
+      "artifactType": "hop_dashboard",
+      "data": [
+        {
+          "name": "HOP 5.1a: Core MCP Server",
+          "status": "completed",
+          "estimatedLOC": 400,
+          "dependencies": [],
+          "description": "MCP server boilerplate with stdio transport"
+        },
+        {
+          "name": "HOP 5.1b: Visualizations",
+          "status": "in-progress",
+          "estimatedLOC": 350,
+          "dependencies": ["5.1a"],
+          "description": "D3 signal map and React hop dashboard"
+        },
+        {
+          "name": "HOP 5.2: Advanced Features",
+          "status": "pending",
+          "estimatedLOC": 500,
+          "dependencies": ["5.1b"],
+          "description": "Dependency graphs and performance charts"
+        }
+      ],
+      "metadata": {
+        "title": "Phase CTS_MCP_1 Dashboard"
+      }
+    }
+  }
+}

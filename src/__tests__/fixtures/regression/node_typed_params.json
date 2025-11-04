@@ -1,0 +1,37 @@
+{
+  "fixture": "node_typed_params",
+  "description": "Node-typed parameters with specific classes",
+  "expectedSignals": [
+    {
+      "name": "child_added",
+      "params": ["child"],
+      "filePath": "node_typed_params.gd",
+      "line": 4,
+      "source": "signal child_added(child: Node2D)",
+      "paramTypes": {
+        "child": "Node2D"
+      }
+    },
+    {
+      "name": "ui_element_created",
+      "params": ["element"],
+      "filePath": "node_typed_params.gd",
+      "line": 5,
+      "source": "signal ui_element_created(element: Control)",
+      "paramTypes": {
+        "element": "Control"
+      }
+    },
+    {
+      "name": "collision_detected",
+      "params": ["body", "normal"],
+      "filePath": "node_typed_params.gd",
+      "line": 6,
+      "source": "signal collision_detected(body: RigidBody2D, normal: Vector2)",
+      "paramTypes": {
+        "body": "RigidBody2D",
+        "normal": "Vector2"
+      }
+    }
+  ]
+}

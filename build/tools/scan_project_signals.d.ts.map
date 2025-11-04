@@ -1,0 +1,1 @@
+{"version":3,"file":"scan_project_signals.d.ts","sourceRoot":"","sources":["../../src/tools/scan_project_signals.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAGH,OAAO,EAAE,cAAc,EAAE,WAAW,EAAE,MAAM,aAAa,CAAC;AAE1D,OAAO,EAAE,cAAc,EAAE,MAAM,iCAAiC,CAAC;AASjE;;GAEG;AACH,wBAAgB,wBAAwB,CAAC,MAAM,EAAE,cAAc,GAAG,WAAW,CAuE5E;AAED;;GAEG;AACH,eAAO,MAAM,sBAAsB,EAAE,cAkBpC,CAAC"}

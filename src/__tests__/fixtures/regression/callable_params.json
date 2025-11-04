@@ -1,0 +1,27 @@
+{
+  "fixture": "callable_params",
+  "description": "Callable-typed signal parameters (Godot 4.x)",
+  "expectedSignals": [
+    {
+      "name": "callback_registered",
+      "params": ["callback"],
+      "filePath": "callable_params.gd",
+      "line": 4,
+      "source": "signal callback_registered(callback: Callable)",
+      "paramTypes": {
+        "callback": "Callable"
+      }
+    },
+    {
+      "name": "event_with_handler",
+      "params": ["event_name", "handler"],
+      "filePath": "callable_params.gd",
+      "line": 5,
+      "source": "signal event_with_handler(event_name: String, handler: Callable)",
+      "paramTypes": {
+        "event_name": "String",
+        "handler": "Callable"
+      }
+    }
+  ]
+}

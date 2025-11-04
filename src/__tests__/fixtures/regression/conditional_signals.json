@@ -1,0 +1,33 @@
+{
+  "fixture": "conditional_signals",
+  "description": "Signals in conditional compilation blocks",
+  "expectedSignals": [
+    {
+      "name": "always_present",
+      "params": [],
+      "filePath": "conditional_signals.gd",
+      "line": 4,
+      "source": "signal always_present"
+    },
+    {
+      "name": "mobile_gesture_detected",
+      "params": ["gesture"],
+      "filePath": "conditional_signals.gd",
+      "line": 7,
+      "source": "signal mobile_gesture_detected(gesture: String)",
+      "paramTypes": {
+        "gesture": "String"
+      }
+    },
+    {
+      "name": "debug_info_updated",
+      "params": ["info"],
+      "filePath": "conditional_signals.gd",
+      "line": 10,
+      "source": "signal debug_info_updated(info: Dictionary)",
+      "paramTypes": {
+        "info": "Dictionary"
+      }
+    }
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "fixture": "enum_params",
+  "description": "Enum-typed signal parameters",
+  "expectedSignals": [
+    {
+      "name": "state_changed",
+      "params": ["new_state", "old_state"],
+      "filePath": "enum_params.gd",
+      "line": 7,
+      "source": "signal state_changed(old_state: State, new_state: State)",
+      "paramTypes": {
+        "old_state": "State",
+        "new_state": "State"
+      }
+    },
+    {
+      "name": "task_scheduled",
+      "params": ["priority", "task_id"],
+      "filePath": "enum_params.gd",
+      "line": 8,
+      "source": "signal task_scheduled(task_id: String, priority: Priority)",
+      "paramTypes": {
+        "task_id": "String",
+        "priority": "Priority"
+      }
+    }
+  ]
+}

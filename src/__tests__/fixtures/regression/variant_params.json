@@ -1,0 +1,39 @@
+{
+  "fixture": "variant_params",
+  "description": "Variant-typed generic parameters",
+  "expectedSignals": [
+    {
+      "name": "generic_event",
+      "params": ["data"],
+      "filePath": "variant_params.gd",
+      "line": 4,
+      "source": "signal generic_event(data: Variant)",
+      "paramTypes": {
+        "data": "Variant"
+      }
+    },
+    {
+      "name": "flexible_update",
+      "params": ["key", "value"],
+      "filePath": "variant_params.gd",
+      "line": 5,
+      "source": "signal flexible_update(key: String, value: Variant)",
+      "paramTypes": {
+        "key": "String",
+        "value": "Variant"
+      }
+    },
+    {
+      "name": "multi_type_signal",
+      "params": ["id", "metadata", "payload"],
+      "filePath": "variant_params.gd",
+      "line": 6,
+      "source": "signal multi_type_signal(id: int, payload: Variant, metadata: Variant)",
+      "paramTypes": {
+        "id": "int",
+        "payload": "Variant",
+        "metadata": "Variant"
+      }
+    }
+  ]
+}

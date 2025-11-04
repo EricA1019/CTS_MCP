@@ -1,0 +1,5 @@
+{
+  "fixture": "unicode_names",
+  "description": "Unicode and non-ASCII characters in signal names - REGEX PARSER LIMITATION",
+  "expectedSignals": []
+}

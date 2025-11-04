@@ -1,0 +1,48 @@
+{
+  "fixture": "consecutive_signals",
+  "description": "Multiple signals on consecutive lines",
+  "expectedSignals": [
+    {
+      "name": "tick",
+      "params": [],
+      "filePath": "consecutive_signals.gd",
+      "line": 4,
+      "source": "signal tick"
+    },
+    {
+      "name": "tock",
+      "params": [],
+      "filePath": "consecutive_signals.gd",
+      "line": 5,
+      "source": "signal tock"
+    },
+    {
+      "name": "beep",
+      "params": [],
+      "filePath": "consecutive_signals.gd",
+      "line": 6,
+      "source": "signal beep"
+    },
+    {
+      "name": "boop",
+      "params": [],
+      "filePath": "consecutive_signals.gd",
+      "line": 7,
+      "source": "signal boop"
+    },
+    {
+      "name": "ping",
+      "params": [],
+      "filePath": "consecutive_signals.gd",
+      "line": 8,
+      "source": "signal ping"
+    },
+    {
+      "name": "pong",
+      "params": [],
+      "filePath": "consecutive_signals.gd",
+      "line": 9,
+      "source": "signal pong"
+    }
+  ]
+}

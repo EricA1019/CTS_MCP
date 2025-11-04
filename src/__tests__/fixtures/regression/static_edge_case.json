@@ -1,0 +1,13 @@
+{
+  "fixture": "static_edge_case",
+  "description": "Signals in static functions (edge case)",
+  "expectedSignals": [
+    {
+      "name": "global_event_triggered",
+      "params": [],
+      "filePath": "static_edge_case.gd",
+      "line": 4,
+      "source": "signal global_event_triggered"
+    }
+  ]
+}

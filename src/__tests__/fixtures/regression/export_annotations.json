@@ -1,0 +1,23 @@
+{
+  "fixture": "export_annotations",
+  "description": "Signals in @export annotated scripts",
+  "expectedSignals": [
+    {
+      "name": "resource_modified",
+      "params": [],
+      "filePath": "export_annotations.gd",
+      "line": 5,
+      "source": "signal resource_modified"
+    },
+    {
+      "name": "property_changed",
+      "params": ["property_name"],
+      "filePath": "export_annotations.gd",
+      "line": 6,
+      "source": "signal property_changed(property_name: String)",
+      "paramTypes": {
+        "property_name": "String"
+      }
+    }
+  ]
+}

@@ -1,0 +1,38 @@
+{
+  "fixture": "resource_params",
+  "description": "PackedScene and Resource-typed parameters",
+  "expectedSignals": [
+    {
+      "name": "scene_loaded",
+      "params": ["scene"],
+      "filePath": "resource_params.gd",
+      "line": 4,
+      "source": "signal scene_loaded(scene: PackedScene)",
+      "paramTypes": {
+        "scene": "PackedScene"
+      }
+    },
+    {
+      "name": "resource_applied",
+      "params": ["resource", "target"],
+      "filePath": "resource_params.gd",
+      "line": 5,
+      "source": "signal resource_applied(resource: Resource, target: Node)",
+      "paramTypes": {
+        "resource": "Resource",
+        "target": "Node"
+      }
+    },
+    {
+      "name": "texture_changed",
+      "params": ["new_tex", "old_tex"],
+      "filePath": "resource_params.gd",
+      "line": 6,
+      "source": "signal texture_changed(old_tex: Texture2D, new_tex: Texture2D)",
+      "paramTypes": {
+        "old_tex": "Texture2D",
+        "new_tex": "Texture2D"
+      }
+    }
+  ]
+}

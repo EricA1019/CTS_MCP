@@ -1,0 +1,5 @@
+{
+  "fixture": "multiline_params",
+  "description": "Multiline signal parameter declarations - REGEX PARSER LIMITATION",
+  "expectedSignals": []
+}

@@ -1,0 +1,41 @@
+{
+  "fixture": "whitespace_edge",
+  "description": "Signals with unusual whitespace patterns",
+  "expectedSignals": [
+    {
+      "name": "tabs_before_name",
+      "params": [],
+      "filePath": "whitespace_edge.gd",
+      "line": 4,
+      "source": "signal\t\ttabs_before_name"
+    },
+    {
+      "name": "multiple_spaces_before",
+      "params": ["param"],
+      "filePath": "whitespace_edge.gd",
+      "line": 5,
+      "source": "signal  multiple_spaces_before(param: int)",
+      "paramTypes": {
+        "param": "int"
+      }
+    },
+    {
+      "name": "trailing_spaces",
+      "params": [],
+      "filePath": "whitespace_edge.gd",
+      "line": 6,
+      "source": "signal trailing_spaces"
+    },
+    {
+      "name": "mixed_whitespace",
+      "params": ["param1", "param2"],
+      "filePath": "whitespace_edge.gd",
+      "line": 7,
+      "source": "signal\tmixed_whitespace\t(\tparam1: String,\tparam2: int\t)",
+      "paramTypes": {
+        "param1": "String",
+        "param2": "int"
+      }
+    }
+  ]
+}

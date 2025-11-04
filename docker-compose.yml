@@ -1,0 +1,70 @@
+version: '3.8'
+
+services:
+  cts-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: broken-divinity/cts-mcp-server:3.0.0
+    container_name: cts-mcp-server
+    
+    # Restart policy
+    restart: unless-stopped
+    
+    # Environment variables
+    environment:
+      - NODE_ENV=production
+      - DEBUG=${DEBUG:-}
+    
+    # Volumes for persistent data
+    volumes:
+      # Mount Godot project directory (read-only for safety)
+      - ${GODOT_PROJECT_PATH:-/path/to/godot/project}:/workspace:ro
+      
+      # Cache directory for performance
+      - cts-cache:/app/.cache
+      
+      # Logs directory
+      - ./logs:/app/logs
+    
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 1G
+        reservations:
+          cpus: '0.5'
+          memory: 256M
+    
+    # Health check
+    healthcheck:
+      test: ["CMD", "node", "-e", "require('./build/index.js')"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    
+    # Logging
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+    
+    # No network ports (stdio transport)
+    network_mode: none
+    
+    # Security options
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
+    
+    # User (non-root)
+    user: "1001:1001"
+
+volumes:
+  cts-cache:
+    driver: local

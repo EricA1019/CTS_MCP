@@ -1,0 +1,24 @@
+{
+  "fixture": "tool_scripts",
+  "description": "@tool script signal declarations",
+  "expectedSignals": [
+    {
+      "name": "editor_tool_activated",
+      "params": [],
+      "filePath": "tool_scripts.gd",
+      "line": 5,
+      "source": "signal editor_tool_activated"
+    },
+    {
+      "name": "tool_parameter_changed",
+      "params": ["param_name", "value"],
+      "filePath": "tool_scripts.gd",
+      "line": 6,
+      "source": "signal tool_parameter_changed(param_name: String, value: Variant)",
+      "paramTypes": {
+        "param_name": "String",
+        "value": "Variant"
+      }
+    }
+  ]
+}

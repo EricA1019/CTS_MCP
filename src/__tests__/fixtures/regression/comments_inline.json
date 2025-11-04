@@ -1,0 +1,45 @@
+{
+  "fixture": "comments_inline",
+  "description": "Signals with inline comments",
+  "expectedSignals": [
+    {
+      "name": "health_changed",
+      "params": ["new_health"],
+      "filePath": "comments_inline.gd",
+      "line": 4,
+      "source": "signal health_changed(new_health: int)  # Player health update",
+      "paramTypes": {
+        "new_health": "int"
+      }
+    },
+    {
+      "name": "damage_taken",
+      "params": ["amount", "source"],
+      "filePath": "comments_inline.gd",
+      "line": 5,
+      "source": "signal damage_taken(amount: float, source: Node)  # Combat damage event",
+      "paramTypes": {
+        "amount": "float",
+        "source": "Node"
+      }
+    },
+    {
+      "name": "item_collected",
+      "params": [],
+      "filePath": "comments_inline.gd",
+      "line": 6,
+      "source": "signal item_collected  # No parameters, inventory update"
+    },
+    {
+      "name": "level_completed",
+      "params": ["score", "time"],
+      "filePath": "comments_inline.gd",
+      "line": 9,
+      "source": "signal level_completed(score: int, time: float)",
+      "paramTypes": {
+        "score": "int",
+        "time": "float"
+      }
+    }
+  ]
+}

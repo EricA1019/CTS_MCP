@@ -1,0 +1,38 @@
+{
+  "fixture": "dict_params",
+  "description": "Dictionary-typed parameters with type hints",
+  "expectedSignals": [
+    {
+      "name": "config_loaded",
+      "params": ["config"],
+      "filePath": "dict_params.gd",
+      "line": 4,
+      "source": "signal config_loaded(config: Dictionary)",
+      "paramTypes": {
+        "config": "Dictionary"
+      }
+    },
+    {
+      "name": "settings_changed",
+      "params": ["new_settings", "old_settings"],
+      "filePath": "dict_params.gd",
+      "line": 5,
+      "source": "signal settings_changed(old_settings: Dictionary, new_settings: Dictionary)",
+      "paramTypes": {
+        "old_settings": "Dictionary",
+        "new_settings": "Dictionary"
+      }
+    },
+    {
+      "name": "json_data_received",
+      "params": ["data", "source"],
+      "filePath": "dict_params.gd",
+      "line": 6,
+      "source": "signal json_data_received(data: Dictionary, source: String)",
+      "paramTypes": {
+        "data": "Dictionary",
+        "source": "String"
+      }
+    }
+  ]
+}

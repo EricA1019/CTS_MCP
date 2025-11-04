@@ -1,0 +1,23 @@
+{
+  "fixture": "async_signals",
+  "description": "Async signal patterns with await keyword (Godot 4.x)",
+  "expectedSignals": [
+    {
+      "name": "async_operation_started",
+      "params": [],
+      "filePath": "async_signals.gd",
+      "line": 5,
+      "source": "signal async_operation_started"
+    },
+    {
+      "name": "async_operation_completed",
+      "params": ["result"],
+      "filePath": "async_signals.gd",
+      "line": 6,
+      "source": "signal async_operation_completed(result: Dictionary)",
+      "paramTypes": {
+        "result": "Dictionary"
+      }
+    }
+  ]
+}

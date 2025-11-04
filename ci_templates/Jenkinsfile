@@ -1,0 +1,246 @@
+// Jenkinsfile for CTS Quality Auditing
+// Copy this to your repository root as 'Jenkinsfile'
+
+pipeline {
+    agent {
+        docker {
+            image 'node:20'
+            args '-u root:root'
+        }
+    }
+    
+    // Environment variables
+    environment {
+        MIN_CTS_SCORE = '75'
+        CTS_MCP_DIR = 'cts_mcp'
+        NODE_ENV = 'production'
+    }
+    
+    // Build options
+    options {
+        buildDiscarder(logRotator(numToKeepStr: '30'))
+        timeout(time: 30, unit: 'MINUTES')
+        timestamps()
+        disableConcurrentBuilds()
+    }
+    
+    // Pipeline stages
+    stages {
+        stage('Checkout') {
+            steps {
+                echo '📦 Checking out source code...'
+                checkout scm
+            }
+        }
+        
+        stage('Setup') {
+            steps {
+                echo '🔧 Installing dependencies...'
+                dir(env.CTS_MCP_DIR) {
+                    // Cache node_modules if possible
+                    sh '''
+                        npm ci
+                        npm run build
+                    '''
+                }
+            }
+        }
+        
+        stage('CTS Audit') {
+            steps {
+                echo '🔍 Running CTS quality audit...'
+                dir(env.CTS_MCP_DIR) {
+                    script {
+                        // Run audit and capture output
+                        sh '''
+                            node build/index.js cts_audit '{
+                                "projectPath": "../",
+                                "categories": ["cts", "code_quality", "project_structure"],
+                                "minScore": '"${MIN_CTS_SCORE}"',
+                                "format": "json"
+                            }' > audit_results.json || true
+                            
+                            # Extract score
+                            SCORE=$(jq -r '.content[0].text | fromjson | .overallScore' audit_results.json 2>/dev/null || echo "0")
+                            echo "CTS Audit Score: $SCORE/100"
+                            echo "$SCORE" > score.txt
+                            
+                            # Save formatted report
+                            jq '.content[0].text | fromjson' audit_results.json > ../cts_audit_report.json
+                        '''
+                        
+                        // Read score
+                        def score = readFile('score.txt').trim()
+                        env.CTS_SCORE = score
+                        
+                        echo "📊 Overall Score: ${score}/100"
+                    }
+                }
+            }
+        }
+        
+        stage('Category Audits') {
+            parallel {
+                stage('CTS Standards') {
+                    steps {
+                        echo '📏 Auditing CTS standards...'
+                        dir(env.CTS_MCP_DIR) {
+                            sh '''
+                                node build/index.js cts_audit '{
+                                    "projectPath": "../",
+                                    "categories": ["cts"],
+                                    "format": "json"
+                                }' > audit_cts.json || true
+                                
+                                SCORE=$(jq -r '.content[0].text | fromjson | .overallScore' audit_cts.json 2>/dev/null || echo "0")
+                                echo "CTS Standards Score: $SCORE/100"
+                            '''
+                        }
+                    }
+                }
+                
+                stage('Code Quality') {
+                    steps {
+                        echo '✨ Auditing code quality...'
+                        dir(env.CTS_MCP_DIR) {
+                            sh '''
+                                node build/index.js cts_audit '{
+                                    "projectPath": "../",
+                                    "categories": ["code_quality"],
+                                    "format": "json"
+                                }' > audit_quality.json || true
+                                
+                                SCORE=$(jq -r '.content[0].text | fromjson | .overallScore' audit_quality.json 2>/dev/null || echo "0")
+                                echo "Code Quality Score: $SCORE/100"
+                            '''
+                        }
+                    }
+                }
+                
+                stage('Project Structure') {
+                    steps {
+                        echo '🏗️ Auditing project structure...'
+                        dir(env.CTS_MCP_DIR) {
+                            sh '''
+                                node build/index.js cts_audit '{
+                                    "projectPath": "../",
+                                    "categories": ["project_structure"],
+                                    "format": "json"
+                                }' > audit_structure.json || true
+                                
+                                SCORE=$(jq -r '.content[0].text | fromjson | .overallScore' audit_structure.json 2>/dev/null || echo "0")
+                                echo "Project Structure Score: $SCORE/100"
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+        
+        stage('Generate Report') {
+            steps {
+                echo '📝 Generating audit report...'
+                script {
+                    sh '''
+                        cat > report.md << 'REPORT'
+## 📊 CTS Quality Audit Results
+
+**Overall Score**: ''' + env.CTS_SCORE + '''/100
+**Threshold**: ''' + env.MIN_CTS_SCORE + '''/100
+**Status**: $([ ${CTS_SCORE%.*} -ge ${MIN_CTS_SCORE} ] && echo '✅ PASSED' || echo '❌ FAILED')
+
+### Category Scores
+REPORT
+                        
+                        jq -r '.categoryScores | to_entries[] | "- **\\(.key)**: \\(.value)/100"' cts_audit_report.json >> report.md || true
+                        
+                        cat >> report.md << 'REPORT'
+
+### Top Violations
+REPORT
+                        
+                        jq -r '.violations[:10] | .[] | "- [\\(.severity | ascii_upcase)] \\(.file):\\(.line) - \\(.message)"' cts_audit_report.json >> report.md || true
+                        
+                        cat report.md
+                    '''
+                }
+            }
+        }
+        
+        stage('Quality Gate') {
+            steps {
+                echo '🚦 Checking quality threshold...'
+                script {
+                    def score = env.CTS_SCORE.toFloat()
+                    def threshold = env.MIN_CTS_SCORE.toFloat()
+                    
+                    if (score < threshold) {
+                        error "❌ CTS audit failed: score ${score} is below threshold ${threshold}"
+                    } else {
+                        echo "✅ CTS audit passed: score ${score} meets threshold ${threshold}"
+                    }
+                }
+            }
+        }
+    }
+    
+    // Post-build actions
+    post {
+        always {
+            echo '📦 Archiving artifacts...'
+            
+            // Archive audit reports
+            archiveArtifacts artifacts: 'cts_audit_report.json,report.md,cts_mcp/audit_*.json', 
+                             allowEmptyArchive: true,
+                             fingerprint: true
+            
+            // Publish HTML report if plugin available
+            script {
+                try {
+                    publishHTML([
+                        allowMissing: true,
+                        alwaysLinkToLastBuild: true,
+                        keepAll: true,
+                        reportDir: '.',
+                        reportFiles: 'report.md',
+                        reportName: 'CTS Audit Report'
+                    ])
+                } catch (Exception e) {
+                    echo "HTML Publisher plugin not available, skipping HTML report"
+                }
+            }
+            
+            // Clean workspace
+            cleanWs(cleanWhenNotBuilt: false,
+                    deleteDirs: true,
+                    disableDeferredWipeout: true,
+                    notFailBuild: true)
+        }
+        
+        success {
+            echo '✅ Build successful - CTS quality standards met!'
+            
+            // Optionally send notification
+            script {
+                if (env.BRANCH_NAME == 'main' || env.BRANCH_NAME == 'develop') {
+                    echo "✉️ Notifying team of successful build on ${env.BRANCH_NAME}"
+                    // Add notification logic here (Slack, email, etc.)
+                }
+            }
+        }
+        
+        failure {
+            echo '❌ Build failed - CTS quality below threshold'
+            
+            // Optionally send failure notification
+            script {
+                echo "✉️ Notifying team of build failure"
+                // Add notification logic here
+            }
+        }
+        
+        unstable {
+            echo '⚠️ Build unstable - review audit results'
+        }
+    }
+}

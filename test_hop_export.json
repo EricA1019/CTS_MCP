@@ -1,0 +1,48 @@
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/call",
+  "params": {
+    "name": "CTS_Export_to_Shrimp",
+    "arguments": {
+      "hopPlan": {
+        "hopId": "5.1a",
+        "name": "Core MCP Server & Shrimp Integration",
+        "description": "Implement foundational MCP server infrastructure with stdio transport and automated Shrimp task creation",
+        "dependencies": [],
+        "estimatedLOC": 400,
+        "deliverables": [
+          "MCP server boilerplate with stdio transport",
+          "CTS_Export_to_Shrimp tool implementation",
+          "ArtifactEngine core with renderer routing",
+          "WebviewManager for VS Code integration"
+        ],
+        "acceptanceCriteria": [
+          "Server starts <2s and responds to initialize/tools/list/tools/call",
+          "CTS_Export_to_Shrimp converts hop plans to Shrimp tasks in <1s",
+          "ArtifactEngine routes to correct renderer based on artifact type",
+          "Webview displays artifacts in VS Code panel"
+        ],
+        "technicalNotes": "Use @modelcontextprotocol/sdk for protocol compliance. Keep tool conversion logic simple (1-to-1 mapping).",
+        "subHops": [
+          {
+            "id": "1",
+            "name": "MCP Server Boilerplate",
+            "description": "Create server class with protocol handlers",
+            "estimatedLOC": 150,
+            "deliverables": ["server.ts with initialize/tools handlers", "stdio transport setup"]
+          },
+          {
+            "id": "2",
+            "name": "CTS Export Tool",
+            "description": "Implement hop-to-task conversion",
+            "estimatedLOC": 150,
+            "deliverables": ["cts_export_to_shrimp.ts with conversion logic"]
+          }
+        ]
+      },
+      "updateMode": "append",
+      "generateSubTasks": true
+    }
+  }
+}
