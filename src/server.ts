@@ -36,15 +36,16 @@ import {
 import { ArtifactEngine } from './artifacts/artifact_engine.js';
 import { PlaceholderSignalMapRenderer } from './artifacts/renderers/placeholder_signal_map.js';
 import { PlaceholderHopDashboardRenderer } from './artifacts/renderers/placeholder_hop_dashboard.js';
-import { D3SignalMapRenderer } from './artifacts/renderers/d3_signal_map.js';
-import { ClusteredSignalMapRenderer } from './artifacts/renderers/d3_signal_map_v2.js';
-import { ReactHopDashboardRenderer } from './artifacts/renderers/react_hop_dashboard.js';
 import { DependencyGraphRenderer } from './artifacts/renderers/dependency_graph.js';
 import { PerformanceTrendRenderer } from './artifacts/renderers/performance_trends.js';
+import { D3HopDashboardRenderer } from './artifacts/renderers/d3_hop_dashboard.js';
+import { InteractiveSignalMapRenderer } from './artifacts/renderers/interactive_signal_map.js';
+import { MCPUIAdapter } from './adapters/mcp_ui_adapter.js';
 import { renderArtifactTool, createRenderArtifactHandler } from './tools/render_artifact.js';
 import { scanProjectSignalsTool, createScanSignalsHandler } from './tools/scan_project_signals.js';
 import { analyzeProjectTool, createAnalyzeProjectHandler } from './tools/analyze_project.js';
 import { suggestRefactoringTool, createSuggestRefactoringHandler } from './tools/suggest_refactoring.js';
+import { getArtifactUpdatesTool, createGetArtifactUpdatesHandler } from './tools/realtime/get_artifact_updates.js';
 
 // Zod schemas for validation
 const MCPRequestSchema = z.object({
@@ -85,11 +86,52 @@ export class CTSMCPServer {
       config: formatConfig(config)
     });
 
-    // Initialize ArtifactEngine with production renderers
+    // Initialize ArtifactEngine with conditional renderer registration
     this.artifactEngine = new ArtifactEngine();
-    this.artifactEngine.registerRenderer(new D3SignalMapRenderer());
-    this.artifactEngine.registerRenderer(new ClusteredSignalMapRenderer());
-    this.artifactEngine.registerRenderer(new ReactHopDashboardRenderer());
+    
+    // Phase 3: Conditional renderer registration based on feature flag
+    if (config.experimental.useMCPUI) {
+      // Production D3-based renderers (Phase 3 complete)
+      logger.info('[CTS MCP] Registering Phase 3 D3 renderers (CTS_EXPERIMENTAL_MCP_UI=true)');
+      this.artifactEngine.registerRenderer(new InteractiveSignalMapRenderer());
+      this.artifactEngine.registerRenderer(new D3HopDashboardRenderer());
+      logger.info('[CTS MCP] ✅ InteractiveSignalMapRenderer registered');
+      logger.info('[CTS MCP] ✅ D3HopDashboardRenderer registered');
+    } else {
+      // Legacy placeholder renderers (backward compatibility)
+      logger.warn('[CTS MCP] Using placeholder renderers (CTS_EXPERIMENTAL_MCP_UI=false)');
+      logger.warn('[CTS MCP] Enable production D3 renderers with: CTS_EXPERIMENTAL_MCP_UI=true');
+      this.artifactEngine.registerRenderer(new PlaceholderSignalMapRenderer());
+      this.artifactEngine.registerRenderer(new PlaceholderHopDashboardRenderer());
+    }
+    
+    // MCP-UI adapter (supports both placeholder and production renderers)
+    const mcpUIAdapter = new MCPUIAdapter();
+    
+    // Register MCP-UI wrapper renderers (backward compatibility)
+    this.artifactEngine.registerRenderer({
+      type: 'signal_map_mcp_ui',
+      render: async (data: unknown): Promise<string> => {
+        return mcpUIAdapter.createArtifact({
+          artifactType: 'signal_map',
+          data,
+          metadata: {},
+        });
+      },
+    });
+    
+    this.artifactEngine.registerRenderer({
+      type: 'hop_dashboard_mcp_ui',
+      render: async (data: unknown): Promise<string> => {
+        return mcpUIAdapter.createArtifact({
+          artifactType: 'hop_dashboard',
+          data,
+          metadata: {},
+        });
+      },
+    });
+    
+    // Register other renderers (dependency graph, performance trends)
     this.artifactEngine.registerRenderer(new DependencyGraphRenderer());
     this.artifactEngine.registerRenderer(new PerformanceTrendRenderer());
 
@@ -97,6 +139,9 @@ export class CTSMCPServer {
     this.registerTool(ctsExportToShrimpTool, withObservability('CTS_Export_to_Shrimp', ctsExportToShrimpHandler));
     this.registerTool(renderArtifactTool, withCache('CTS_Render_Artifact', createRenderArtifactHandler(this.artifactEngine)));
     this.registerTool(scanProjectSignalsTool, withCache('CTS_Scan_Project_Signals', createScanSignalsHandler(this.artifactEngine)));
+    
+    // Phase 2 real-time update tool (no caching - always returns latest)
+    this.registerTool(getArtifactUpdatesTool, withObservability('CTS_Get_Artifact_Updates', createGetArtifactUpdatesHandler()));
     
     // Phase 3 tools with caching
     this.registerTool(analyzeProjectTool, withCache('CTS_Analyze_Project', createAnalyzeProjectHandler()));

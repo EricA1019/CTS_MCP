@@ -20,6 +20,11 @@ export interface ServerConfig {
   enableCache: boolean;
   cacheTTL: number;
   enableProfile: boolean;
+
+  // Experimental Features
+  experimental: {
+    useMCPUI: boolean;
+  };
 }
 
 /**
@@ -43,6 +48,11 @@ export function loadConfig(): ServerConfig {
     enableCache: process.env.CTS_ENABLE_CACHE !== 'false',
     cacheTTL: parseInt(process.env.CTS_CACHE_TTL || '300000', 10),
     enableProfile: process.env.CTS_PROFILE === 'true',
+
+    // Experimental Features
+    experimental: {
+      useMCPUI: process.env.CTS_EXPERIMENTAL_MCP_UI === 'true',
+    },
   };
 }
 
@@ -102,6 +112,7 @@ export function formatConfig(config: ServerConfig): string {
     enableCache: config.enableCache,
     cacheTTL: `${(config.cacheTTL / 1000).toFixed(0)}s`,
     enableProfile: config.enableProfile,
+    experimental: config.experimental,
   }, null, 2);
 }
 

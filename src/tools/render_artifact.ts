@@ -25,8 +25,11 @@ export function createRenderArtifactHandler(engine: ArtifactEngine): ToolHandler
   return async (args: Record<string, unknown>) => {
     const params = RenderArtifactParamsSchema.parse(args);
 
+    // Always route to MCP-UI renderers (Phase 1 complete)
+    const rendererType = `${params.artifactType}_mcp_ui` as 'signal_map_mcp_ui' | 'hop_dashboard_mcp_ui';
+
     const result = await engine.renderArtifact(
-      params.artifactType,
+      rendererType,
       params.data,
       params.metadata
     );

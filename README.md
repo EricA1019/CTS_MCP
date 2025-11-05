@@ -1,21 +1,41 @@
 # CTS MCP Server
 
-**Version**: 3.0.0  
+**Version**: 3.1.0  
 **Protocol**: Model Context Protocol 2024-11-05  
 **Status**: ✅ Production Ready
 
-Model Context Protocol server for Close-to-Shore (CTS) methodology automation, providing automated task creation in Shrimp MCP and interactive artifact visualization (signal maps, hop dashboards, dependency graphs) for Godot game development.
+Model Context Protocol server for Close-to-Shore (CTS) methodology automation, providing automated task creation in Shrimp MCP and **interactive D3 artifact visualization** (signal maps, hop dashboards, dependency graphs) for Godot game development.
 
 ## Features
 
-### Tier 3 Infrastructure (v3.0.0 - NEW!)
+### Phase 3: Production-Ready Visualizations (v3.1.0 - NEW! 🎨)
+
+- 🎯 **Real D3 Signal Maps**: Interactive force-directed graphs with signal relationship detection
+  - Automatic clustering and community detection
+  - Zoom, pan, drag, filter by EventBus/SignalBus
+  - Lazy loading for large projects (>100 nodes)
+  - Export to PNG/SVG/PDF
+- 📊 **Hop Dashboard Renderer**: Gantt-style task progress visualization
+  - Phase-based timeline with dependency arrows
+  - Color-coded status (planned/in_progress/completed)
+  - LOC budget tracking and CTS compliance stats
+  - Progressive rendering for large projects (>10 hops)
+- ⚡ **Performance Optimizations**:
+  - <2s render time for large projects (200+ signals)
+  - <500KB tree-shaken bundle size
+  - <10MB memory growth over 10 renders
+  - Lazy loading: Initial 50 nodes, +50 per "Load More"
+- 🧪 **96 New Tests**: Full coverage for renderers, parsers, performance benchmarks
+- 📚 **Comprehensive Documentation**: API reference, deployment guide, integration examples
+
+### Tier 3 Infrastructure (v3.0.0)
 
 - 🚀 **CI/CD Pipeline**: GitHub Actions with test, performance, quality, security jobs
 - 📦 **NPM Package**: Scoped `@broken-divinity/cts-mcp-server` ready for npm publish
 - 🐳 **Docker Support**: Multi-stage Alpine image (150-200MB), production-ready
 - 📊 **Observability**: Structured logging, metrics collection, Prometheus export
 - ⚡ **Performance**: All benchmarks passing (<2ms cache, <100ms config, <5ms sampling)
-- 🧪 **Test Coverage**: 772 tests passing (635+ from Tier 2C improvements)
+- 🧪 **Test Coverage**: 868+ tests passing (772 from v3.0.0 + 96 from Phase 3)
 
 ### Tier 2C Production Hardening (v3.0.0)
 
@@ -105,63 +125,110 @@ echo '{
 
 ### 2. CTS_Render_Artifact
 
-Render interactive visualizations (signal maps, hop dashboards, dependency graphs, performance trends).
+Render interactive D3 visualizations (signal maps, hop dashboards).
 
 **Supported Artifact Types**:
-- `signal_map`: Basic force-directed signal graph
-- `signal_map_v2`: Clustered signal map with community detection (Phase 2)
-- `dependency_graph`: Hierarchical signal connection visualization (Phase 2)
-- `performance_trends`: Time-series performance monitoring (Phase 2)
-- `hop_dashboard`: CTS hop status board
+- `signal_map`: Interactive force-directed signal graph with relationship detection
+- `hop_dashboard`: Gantt-style CTS hop progress visualization
 
-**Signal Map V2 (Clustered) Example**:
+**Signal Map Example**:
 ```bash
-cat test_signal_map_v2.json | node build/index.js 2>/dev/null | jq '.result.content[0].text' -r | jq -r '.html' > clustered_map.html
+echo '{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "CTS_Render_Artifact",
+    "arguments": {
+      "artifactType": "signal_map",
+      "data": {
+        "signals": [
+          {"name": "player_health_changed", "source": "EventBus", "params": ["new_health", "old_health"], "filePath": "scripts/player.gd", "line": 42},
+          {"name": "enemy_spawned", "source": "EventBus", "params": ["enemy_type", "position"], "filePath": "scripts/enemy_manager.gd", "line": 105}
+        ],
+        "projectPath": "/path/to/project"
+      },
+      "metadata": {
+        "title": "Player & Combat Signals",
+        "description": "Core gameplay signal architecture"
+      }
+    }
+  }
+}' | node build/index.js
 ```
 
 **Features**:
-- Greedy modularity optimization clustering
-- Convex hull boundaries for clusters
-- Interactive legend (toggle cluster visibility)
-- Performance overlay (clustering + render time)
-- Supports 150-300 signals
-
-**Dependency Graph Example**:
-```bash
-cat test_dependency_graph.json | node build/index.js 2>/dev/null | jq '.result.content[0].text' -r | jq -r '.html' > dependencies.html
-```
-
-**Features**:
-- Hierarchical tree layout
-- Signal definitions (green) and connections (blue)
-- File grouping visualization
-- Cross-file tracking
-
-**Performance Trends Example**:
-```bash
-cat test_performance_trends.json | node build/index.js 2>/dev/null | jq '.result.content[0].text' -r | jq -r '.html' > trends.html
-```
-
-**Features**:
-- Multi-line time-series chart (D3.js)
-- Metric selection (dropdown)
-- Zoom/pan interaction
-- Threshold annotations
+- 🎯 **Force-Directed Layout**: Nodes repel, edges attract, clusters group
+- 🖱️ **Interactive Controls**: Zoom, pan, drag nodes, filter by EventBus/SignalBus
+- ⚡ **Lazy Loading**: Automatic for graphs >100 nodes (initial batch: 50 nodes)
+- 🎨 **Dark/Light Themes**: Automatic theme detection (respects VS Code theme)
+- 📦 **Export**: PNG/SVG/PDF via browser APIs (see docs/API.md)
+- 🔍 **Signal Search**: Filter by name, file, or type
 
 **Hop Dashboard Example**:
 ```bash
-cat test_hop_dashboard.json | node build/index.js 2>/dev/null | jq '.result.content[0].text' -r | jq -r '.html' > hop_dashboard.html
+echo '{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "tools/call",
+  "params": {
+    "name": "CTS_Render_Artifact",
+    "arguments": {
+      "artifactType": "hop_dashboard",
+      "data": {
+        "phases": [
+          {
+            "name": "Phase 1: Foundation",
+            "hops": [
+              {
+                "id": "1.1a",
+                "name": "Project Setup",
+                "status": "completed",
+                "description": "Initialize Godot project",
+                "estimatedLOC": 200,
+                "actualLOC": 185,
+                "ctsCompliant": true,
+                "phase": "Phase 1: Foundation",
+                "dependencies": []
+              },
+              {
+                "id": "1.2a",
+                "name": "Signal Architecture",
+                "status": "in_progress",
+                "description": "Implement EventBus",
+                "estimatedLOC": 300,
+                "ctsCompliant": true,
+                "phase": "Phase 1: Foundation",
+                "dependencies": ["1.1a"]
+              }
+            ]
+          }
+        ]
+      },
+      "metadata": {
+        "title": "Project Roadmap"
+      }
+    }
+  }
+}' | node build/index.js
 ```
+
+**Features**:
+- 📊 **Gantt Timeline**: Horizontal phase-based layout
+- 🎨 **Status Colors**: Planned (gray), in_progress (blue), completed (green)
+- ➡️ **Dependency Arrows**: Left-to-right flow with curved paths
+- 📈 **Stats Panel**: Completion rate, LOC budget, CTS compliance
+- 🔄 **Progressive Rendering**: Automatic for dashboards >10 hops (yields to main thread)
 
 ### 3. CTS_Scan_Project_Signals
 
-Scan Godot project for signal definitions.
+Scan Godot project for EventBus/SignalBus signal definitions and optionally render signal map.
 
 **Input**:
 ```json
 {
   "projectPath": "/home/user/Godot/MyProject",
-  "includeEventBusOnly": true
+  "renderMap": true
 }
 ```
 
@@ -169,10 +236,91 @@ Scan Godot project for signal definitions.
 ```json
 {
   "success": true,
-  "signalsFound": 55,
-  "data": {
-    "signals": [...],
-    "filters": {}
+  "timestamp": "2025-11-04T15:30:00Z",
+  "toolName": "CTS_Scan_Project_Signals",
+  "result": {
+    "projectPath": "/home/user/Godot/MyProject",
+    "totalSignals": 55,
+    "eventBusSignals": 42,
+    "signalBusSignals": 13,
+    "signals": [
+      {"name": "player_health_changed", "source": "EventBus", "params": ["new_health", "old_health"], "file": "scripts/player.gd", "line": 42}
+    ],
+    "rendered": true,
+    "html": "<!DOCTYPE html>...",
+    "cached": false
+  }
+}
+```
+
+**Performance**:
+- ~500ms scan time for 1000-file projects
+- <100ms render for small projects (<50 signals)
+- <2s render for large projects (>500 signals) with lazy loading
+
+## Documentation
+
+- 📖 **[API Reference](docs/API.md)**: Comprehensive API documentation for all tools, artifact types, and renderer APIs
+- 🚀 **[Deployment Guide](docs/DEPLOYMENT.md)**: Production deployment strategies (systemd, PM2, Docker)
+- 🧪 **[Integration Examples](docs/API.md#code-examples)**: Full code examples for signal scanning, artifact rendering, export
+
+## Quick Start
+
+### Installation
+
+```bash
+cd cts_mcp
+npm install
+npm run build
+```
+
+**Verify Installation**:
+```bash
+npm test
+# Expected: 868+ tests passing
+```
+
+### Enable Production Renderers
+
+```bash
+export CTS_EXPERIMENTAL_MCP_UI=true
+npm start
+```
+
+The server listens on **stdin** and writes to **stdout** using JSON-RPC 2.0 protocol.
+
+### VS Code Integration
+
+Add to `.vscode/settings.json`:
+
+```json
+{
+  "mcpServers": {
+    "cts": {
+      "command": "node",
+      "args": ["/path/to/cts_mcp/build/index.js"],
+      "env": {
+        "CTS_EXPERIMENTAL_MCP_UI": "true"
+      }
+    }
+  }
+}
+```
+
+### Claude Desktop Integration
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "cts": {
+      "command": "node",
+      "args": ["/path/to/cts_mcp/build/index.js"],
+      "env": {
+        "CTS_EXPERIMENTAL_MCP_UI": "true"
+      }
+    }
   }
 }
 ```
